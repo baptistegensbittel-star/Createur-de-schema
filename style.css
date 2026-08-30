@@ -1,0 +1,170 @@
+:root {
+  --border: #ccc;
+  --accent: #2563eb;
+  --bg: #fafafa;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, Arial, sans-serif;
+  color: #222;
+  background: var(--bg);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.topbar h1 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.toolbar button {
+  margin-left: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.toolbar button:hover { background: #f0f0f0; }
+.toolbar button:active { background: #e5e5e5; }
+
+.workspace {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.palette {
+  width: 170px;
+  border-right: 1px solid var(--border);
+  background: #fff;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.palette h2 {
+  font-size: 14px;
+  margin: 0 0 6px;
+}
+
+.hint {
+  font-size: 12px;
+  color: #666;
+  margin: 0 0 10px;
+}
+
+.palette-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fdfdfd;
+  cursor: grab;
+  user-select: none;
+}
+
+.palette-item:hover {
+  border-color: var(--accent);
+  background: #f2f6ff;
+}
+
+.palette-item span {
+  font-size: 11px;
+  text-align: center;
+}
+
+.canvas-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.canvas-hint {
+  padding: 6px 12px 0;
+  margin-bottom: 4px;
+}
+
+#canvas-container {
+  flex: 1;
+  min-height: 0;
+  margin: 0 12px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+
+#canvas {
+  display: block;
+  cursor: default;
+}
+
+.component { cursor: grab; }
+.component.dragging { cursor: grabbing; }
+
+.component.selected .comp-body {
+  stroke: var(--accent) !important;
+  stroke-width: 3 !important;
+}
+
+.terminal {
+  fill: #fff;
+  stroke: #333;
+  stroke-width: 1.5;
+  cursor: crosshair;
+}
+
+.terminal:hover {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+
+.wire {
+  fill: none;
+  stroke: #222;
+  stroke-width: 2.5;
+  cursor: pointer;
+}
+
+.wire.selected {
+  stroke: var(--accent);
+  stroke-width: 3.5;
+}
+
+.wire-preview {
+  fill: none;
+  stroke: #999;
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+  pointer-events: none;
+}
+
+.comp-label {
+  font-size: 10px;
+  fill: #444;
+  text-anchor: middle;
+  pointer-events: none;
+  user-select: none;
+}

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Créateur de schéma électrique</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Créateur de schéma électrique</h1>
+    <div class="toolbar">
+      <button id="btn-rotate" title="Faire pivoter le composant sélectionné">Pivoter</button>
+      <button id="btn-delete" title="Supprimer le composant ou le fil sélectionné">Supprimer</button>
+      <button id="btn-clear" title="Effacer tout le schéma">Nouveau</button>
+      <button id="btn-save" title="Enregistrer le schéma dans le navigateur">Enregistrer</button>
+      <button id="btn-load" title="Recharger le dernier schéma enregistré">Charger</button>
+      <button id="btn-export" title="Exporter le schéma en image PNG">Exporter PNG</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="palette" id="palette">
+      <h2>Composants</h2>
+      <p class="hint">Glisse un composant sur le canevas.</p>
+      <!-- Les éléments de la palette sont générés par app.js -->
+    </aside>
+
+    <section class="canvas-wrap">
+      <p class="hint canvas-hint">
+        Glisse-dépose un composant depuis la gauche. Clique sur une borne (petit rond) puis sur une autre borne pour tracer un fil.
+        Clique sur un composant pour le sélectionner (pivoter / supprimer).
+      </p>
+      <div id="canvas-container">
+        <svg id="canvas" width="100%" height="100%" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e3e3e3" stroke-width="1"/>
+            </pattern>
+          </defs>
+          <rect id="grid-bg" x="0" y="0" width="1200" height="800" fill="url(#grid)"/>
+          <g id="wires-layer"></g>
+          <g id="components-layer"></g>
+        </svg>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
