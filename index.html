@@ -29,7 +29,8 @@
     <section class="canvas-wrap">
       <p class="hint canvas-hint">
         Glisse-dépose un composant depuis la gauche. Clique sur une borne (petit rond) puis sur une autre borne pour tracer un fil.
-        Clique sur un composant pour le sélectionner (pivoter / supprimer).
+        Clique sur un composant pour le sélectionner (pivoter / supprimer). Clique sur un fil pour afficher sa poignée et faire glisser
+        son inclinaison, par exemple pour l'écarter d'un composant.
       </p>
       <div id="canvas-container">
         <svg id="canvas" width="100%" height="100%" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid meet">
@@ -41,6 +42,7 @@
           <rect id="grid-bg" x="0" y="0" width="1200" height="800" fill="url(#grid)"/>
           <g id="wires-layer"></g>
           <g id="components-layer"></g>
+          <g id="handles-layer"></g>
         </svg>
       </div>
     </section>

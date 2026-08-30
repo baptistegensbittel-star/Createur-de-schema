@@ -160,6 +160,17 @@ body {
   pointer-events: none;
 }
 
+.wire-handle {
+  fill: #fff;
+  stroke: var(--accent);
+  stroke-width: 2;
+  cursor: move;
+}
+
+.wire-handle:hover {
+  fill: var(--accent);
+}
+
 .comp-label {
   font-size: 10px;
   fill: #444;

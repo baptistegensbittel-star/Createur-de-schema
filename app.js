@@ -32,8 +32,8 @@ const COMPONENT_TYPES = {
     imageSrc: 'assets/images/interrupteur.png',
     width: 110, height: 53,
     terminals: [
-      { x: 0.15, y: 0.97 },
-      { x: 0.85, y: 0.97 },
+      { x: 0.182, y: 0.616 },
+      { x: 0.918, y: 0.7 },
     ],
   },
   interrupteurFerme: {
@@ -41,8 +41,8 @@ const COMPONENT_TYPES = {
     imageSrc: 'assets/images/interrupteur-ferme.png',
     width: 100, height: 35,
     terminals: [
-      { x: 0.08, y: 0.8 },
-      { x: 0.92, y: 0.8 },
+      { x: 0.089, y: 0.447 },
+      { x: 0.917, y: 0.584 },
     ],
   },
   generateur: {
@@ -50,8 +50,8 @@ const COMPONENT_TYPES = {
     imageSrc: 'assets/images/generateur.png',
     width: 100, height: 66,
     terminals: [
-      { x: 0.15, y: 0.82 },
-      { x: 0.32, y: 0.9 },
+      { x: 0.11, y: 0.727 },
+      { x: 0.336, y: 0.737 },
     ],
   },
   moteur: {
@@ -68,8 +68,8 @@ const COMPONENT_TYPES = {
     imageSrc: 'assets/images/diode.png',
     width: 90, height: 74,
     terminals: [
-      { x: 0, y: 0.45 },
-      { x: 1, y: 0.45 },
+      { x: 0, y: 0.964 },
+      { x: 0.994, y: 0.022 },
     ],
   },
   led: {
@@ -77,8 +77,8 @@ const COMPONENT_TYPES = {
     imageSrc: 'assets/images/led.png',
     width: 20, height: 80,
     terminals: [
-      { x: 0.2, y: 1 },
-      { x: 0.57, y: 0.9 },
+      { x: 0.2, y: 0.993 },
+      { x: 0.586, y: 0.964 },
     ],
   },
   resistance: {
@@ -96,16 +96,18 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 const STORAGE_KEY = 'circuit-schema-v1';
 
 let components = []; // {id, type, x, y, rotation}
-let wires = [];       // {id, from:{compId, term}, to:{compId, term}}
+let wires = [];       // {id, from:{compId, term}, to:{compId, term}, bend:{dx,dy}}
 let nextId = 1;
 
-let selection = null; // {kind:'component'|'wire', id}
-let dragState = null; // pour déplacer un composant
-let wireDraw = null;  // pour tracer un fil en cours
+let selection = null;   // {kind:'component'|'wire', id}
+let dragState = null;   // pour déplacer un composant
+let wireDraw = null;    // pour tracer un fil en cours
+let bendDragState = null; // pour incliner un fil déjà tracé (id du fil)
 
 const svg = document.getElementById('canvas');
 const componentsLayer = document.getElementById('components-layer');
 const wiresLayer = document.getElementById('wires-layer');
+const handlesLayer = document.getElementById('handles-layer');
 const paletteEl = document.getElementById('palette');
 
 init();
@@ -219,17 +221,34 @@ function getTerminalPositions(comp) {
 function render() {
   componentsLayer.innerHTML = '';
   wiresLayer.innerHTML = '';
+  handlesLayer.innerHTML = '';
 
   wires.forEach((wire) => {
-    const path = svgEl('path', { class: 'wire', 'data-id': wire.id });
-    path.classList.toggle('selected', selection && selection.kind === 'wire' && selection.id === wire.id);
-    updateWirePath(path, wire);
+    const isSelected = selection && selection.kind === 'wire' && selection.id === wire.id;
+    const path = svgEl('path', {
+      class: 'wire', 'data-id': wire.id,
+      fill: 'none', stroke: isSelected ? '#2563eb' : '#1b1e1c', 'stroke-width': isSelected ? 3.5 : 2.5,
+    });
+    path.classList.toggle('selected', isSelected);
+    const bend = updateWirePath(path, wire);
     path.addEventListener('mousedown', (e) => {
       e.stopPropagation();
       selection = { kind: 'wire', id: wire.id };
       render();
     });
     wiresLayer.appendChild(path);
+
+    if (isSelected && bend) {
+      const handle = svgEl('circle', {
+        class: 'wire-handle', cx: bend.x, cy: bend.y, r: 6,
+        fill: '#fff', stroke: '#2563eb', 'stroke-width': 2,
+      });
+      handle.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        bendDragState = { id: wire.id };
+      });
+      handlesLayer.appendChild(handle);
+    }
   });
 
   components.forEach((comp) => {
@@ -244,6 +263,7 @@ function render() {
     def.terminals.forEach((t, i) => {
       const circle = svgEl('circle', {
         class: 'terminal', cx: t.x * def.width, cy: t.y * def.height, r: 5,
+        fill: '#fff', stroke: '#333', 'stroke-width': 1.5,
         'data-comp': comp.id, 'data-term': i,
       });
       circle.addEventListener('mousedown', (e) => {
@@ -274,9 +294,12 @@ function render() {
 function updateWirePath(path, wire) {
   const from = resolveTerminal(wire.from);
   const to = resolveTerminal(wire.to);
-  if (!from || !to) return;
-  const dx = (to.x - from.x) * 0.4;
-  path.setAttribute('d', `M ${from.x} ${from.y} C ${from.x + dx} ${from.y}, ${to.x - dx} ${to.y}, ${to.x} ${to.y}`);
+  if (!from || !to) return null;
+  const bend = wire.bend || { dx: 0, dy: 0 };
+  const mid = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
+  const control = { x: mid.x + bend.dx, y: mid.y + bend.dy };
+  path.setAttribute('d', `M ${from.x} ${from.y} Q ${control.x} ${control.y} ${to.x} ${to.y}`);
+  return control;
 }
 
 function resolveTerminal(ref) {
@@ -318,10 +341,20 @@ function attachCanvasEvents() {
       const from = resolveTerminal(wireDraw);
       if (from) preview.setAttribute('d', `M ${from.x} ${from.y} L ${pt.x} ${pt.y}`);
     }
+
+    if (bendDragState) {
+      const wire = wires.find((w) => w.id === bendDragState.id);
+      const from = resolveTerminal(wire.from);
+      const to = resolveTerminal(wire.to);
+      const mid = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
+      wire.bend = { dx: pt.x - mid.x, dy: pt.y - mid.y };
+      render();
+    }
   });
 
   window.addEventListener('mouseup', () => {
     dragState = null;
+    bendDragState = null;
     document.querySelectorAll('.component.dragging').forEach((el) => el.classList.remove('dragging'));
   });
 
@@ -423,9 +456,50 @@ function deleteSelection() {
   render();
 }
 
-function exportPng() {
+const imageDataUriCache = new Map();
+
+function toDataUri(href) {
+  if (href.startsWith('data:')) return Promise.resolve(href);
+  if (imageDataUriCache.has(href)) return Promise.resolve(imageDataUriCache.get(href));
+  return fetch(href)
+    .then((res) => res.blob())
+    .then((blob) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        imageDataUriCache.set(href, reader.result);
+        resolve(reader.result);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    }));
+}
+
+async function exportPng() {
   const clone = svg.cloneNode(true);
-  clone.querySelectorAll('.wire-preview').forEach((el) => el.remove());
+  clone.querySelectorAll('.wire-preview, .wire-handle').forEach((el) => el.remove());
+  const gridBg = clone.querySelector('#grid-bg');
+  if (gridBg) gridBg.setAttribute('fill', '#ffffff');
+
+  // Un fil sélectionné (bleu, plus épais) garde son apparence normale sur l'export.
+  clone.querySelectorAll('.wire').forEach((wire) => {
+    wire.setAttribute('stroke', '#1b1e1c');
+    wire.setAttribute('stroke-width', 2.5);
+  });
+
+  // Un <image> en chemin relatif (ou même absolu, même origine) ne se charge pas une
+  // fois le SVG sérialisé et chargé depuis un blob: — il faut l'intégrer en data URI.
+  const images = Array.from(clone.querySelectorAll('image'));
+  await Promise.all(images.map(async (image) => {
+    const href = image.getAttribute('href');
+    if (!href) return;
+    const absolute = new URL(href, document.baseURI).href;
+    try {
+      image.setAttribute('href', await toDataUri(absolute));
+    } catch (err) {
+      // Laisse le href tel quel si le chargement échoue ; l'export continue sans cette image.
+    }
+  }));
+
   const xml = new XMLSerializer().serializeToString(clone);
   const svgBlob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
   const url = URL.createObjectURL(svgBlob);
