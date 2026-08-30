@@ -155,20 +155,16 @@ function svgEl(name, attrs) {
 }
 
 function drawBatteryGlyph(g, w, h) {
-  // Pile rectangulaire verticale (façon pile plate/AA), isolée du reste du montage.
+  // Pile turquoise avec bande verte et deux fils sortant des coins, isolée du reste du montage.
+  g.appendChild(svgEl('line', { x1: w * 0.28, y1: 10, x2: w * 0.1, y2: -6, stroke: '#111', 'stroke-width': 3, 'stroke-linecap': 'round' }));
+  g.appendChild(svgEl('line', { x1: w * 0.72, y1: 10, x2: w * 0.9, y2: -6, stroke: '#111', 'stroke-width': 3, 'stroke-linecap': 'round' }));
   g.appendChild(svgEl('rect', {
-    class: 'comp-body', x: 4, y: 8, width: w - 8, height: h - 16, rx: 7,
-    fill: '#3fae76', stroke: '#1f6b47', 'stroke-width': 2,
+    class: 'comp-body', x: 2, y: 6, width: w - 4, height: h - 10, rx: 3,
+    fill: '#0f8f96', stroke: '#111', 'stroke-width': 2.5,
   }));
-  g.appendChild(svgEl('rect', { x: w / 2 - 8, y: 0, width: 16, height: 10, rx: 2, fill: '#444', stroke: '#222' }));
-  g.appendChild(svgEl('rect', { x: 8, y: h / 2 - 10, width: w - 16, height: 20, rx: 3, fill: '#f4fbf6', stroke: '#1f6b47', 'stroke-width': 1 }));
-  const plus = svgEl('text', { x: w / 2, y: h / 2 - 15, class: 'comp-label', style: 'font-size:13px;font-weight:bold;' });
-  plus.textContent = '+';
-  g.appendChild(plus);
-  const minus = svgEl('text', { x: w / 2, y: h / 2 + 24, class: 'comp-label', style: 'font-size:13px;font-weight:bold;' });
-  minus.textContent = '−';
-  g.appendChild(minus);
-  g.appendChild(svgEl('rect', { x: 8, y: 12, width: 4, height: h - 24, fill: '#ffffff', opacity: 0.35 }));
+  g.appendChild(svgEl('rect', { x: w * 0.16, y: 12, width: w * 0.2, height: w * 0.2, fill: '#111' }));
+  g.appendChild(svgEl('circle', { cx: w * 0.76, cy: 12 + w * 0.1, r: w * 0.1, fill: '#111' }));
+  g.appendChild(svgEl('rect', { x: w * 0.12, y: h * 0.56, width: w * 0.76, height: h * 0.2, fill: '#3ec95a', stroke: '#1f8a36', 'stroke-width': 1 }));
 }
 
 function drawLampGlyph(g, w, h) {
