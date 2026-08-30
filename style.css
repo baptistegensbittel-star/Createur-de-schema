@@ -125,8 +125,7 @@ body {
 .component.dragging { cursor: grabbing; }
 
 .component.selected .comp-body {
-  stroke: var(--accent) !important;
-  stroke-width: 3 !important;
+  filter: drop-shadow(0 0 3px var(--accent)) drop-shadow(0 0 3px var(--accent));
 }
 
 .terminal {

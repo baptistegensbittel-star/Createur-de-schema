@@ -1,65 +1,98 @@
 // Créateur de schéma électrique — logique de l'application
 //
-// Chaque type de composant peut soit dessiner une icône vectorielle de
-// remplacement (placeholder), soit afficher une vraie image si `imageSrc`
-// est renseigné dans COMPONENT_TYPES. Pour utiliser tes propres images :
-// dépose le fichier dans assets/images/ et renseigne son chemin dans
-// `imageSrc` ci-dessous (ex: 'assets/images/pile.png'). Rien d'autre à
-// changer, le placeholder disparaît automatiquement.
+// Chaque composant affiche l'image réelle fournie (assets/images/*.png).
+// `terminals` donne, pour chaque borne, sa position en fraction (0 à 1) de
+// la largeur/hauteur de l'image — c'est là que les fils s'accrochent et que
+// le petit rond cliquable apparaît. Une fraction peut dépasser [0, 1] pour
+// placer une borne juste à côté de l'image (ex: sous une ampoule qui n'a
+// pas de patte dessinée) ; `stubFrom` dessine alors un petit trait entre le
+// bord de l'image et la borne pour que ça reste lisible.
 
 const COMPONENT_TYPES = {
   pile: {
     label: 'Pile',
-    imageSrc: '',
-    width: 46, height: 84,
-    glyph: drawBatteryGlyph,
+    imageSrc: 'assets/images/pile.png',
+    width: 59, height: 90,
+    terminals: [
+      { x: 0.15, y: 0.08 },
+      { x: 0.85, y: 0.08 },
+    ],
   },
   lampe: {
     label: 'Lampe',
-    imageSrc: '',
-    width: 52, height: 72,
-    glyph: drawLampGlyph,
+    imageSrc: 'assets/images/lampe.png',
+    width: 42, height: 70,
+    terminals: [
+      { x: 0.35, y: 1.12, stubFrom: { x: 0.35, y: 1 } },
+      { x: 0.65, y: 1.12, stubFrom: { x: 0.65, y: 1 } },
+    ],
   },
   interrupteur: {
-    label: 'Interrupteur',
-    imageSrc: '',
-    width: 96, height: 46,
-    glyph: drawSwitchGlyph,
+    label: 'Interrupteur (ouvert)',
+    imageSrc: 'assets/images/interrupteur.png',
+    width: 110, height: 53,
+    terminals: [
+      { x: 0.15, y: 0.97 },
+      { x: 0.85, y: 0.97 },
+    ],
+  },
+  interrupteurFerme: {
+    label: 'Interrupteur (fermé)',
+    imageSrc: 'assets/images/interrupteur-ferme.png',
+    width: 100, height: 35,
+    terminals: [
+      { x: 0.08, y: 0.8 },
+      { x: 0.92, y: 0.8 },
+    ],
   },
   generateur: {
     label: 'Générateur',
-    imageSrc: '',
-    width: 80, height: 64,
-    glyph: drawGeneratorGlyph,
+    imageSrc: 'assets/images/generateur.png',
+    width: 100, height: 66,
+    terminals: [
+      { x: 0.15, y: 0.82 },
+      { x: 0.32, y: 0.9 },
+    ],
   },
   moteur: {
     label: 'Moteur',
-    imageSrc: '',
-    width: 64, height: 64,
-    glyph: drawMotorGlyph,
+    imageSrc: 'assets/images/moteur.png',
+    width: 100, height: 61,
+    terminals: [
+      { x: 0.16, y: 0.85 },
+      { x: 0.5, y: 0.88 },
+    ],
   },
   diode: {
     label: 'Diode',
-    imageSrc: '',
-    width: 70, height: 32,
-    glyph: drawDiodeGlyph,
+    imageSrc: 'assets/images/diode.png',
+    width: 90, height: 74,
+    terminals: [
+      { x: 0, y: 0.45 },
+      { x: 1, y: 0.45 },
+    ],
   },
   led: {
     label: 'Diode électroluminescente',
-    imageSrc: '',
-    width: 60, height: 46,
-    glyph: drawLedGlyph,
+    imageSrc: 'assets/images/led.png',
+    width: 20, height: 80,
+    terminals: [
+      { x: 0.2, y: 1 },
+      { x: 0.57, y: 0.9 },
+    ],
   },
   resistance: {
     label: 'Résistance',
-    imageSrc: '',
-    width: 72, height: 30,
-    glyph: drawResistorGlyph,
+    imageSrc: 'assets/images/resistance.png',
+    width: 70, height: 32,
+    terminals: [
+      { x: 0, y: 0.5 },
+      { x: 1, y: 0.5 },
+    ],
   },
 };
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const LEAD = 16; // longueur des pattes de connexion de part et d'autre du composant
 const STORAGE_KEY = 'circuit-schema-v1';
 
 let components = []; // {id, type, x, y, rotation}
@@ -115,25 +148,23 @@ function buildPalette() {
   });
 }
 
-// ---------- Rendu des composants (image réelle ou glyphe de remplacement) ----------
+// ---------- Rendu des composants ----------
 
-function renderComponentBody(g, type, def, withLeads) {
-  if (withLeads) {
-    const leadY = def.height / 2;
-    g.appendChild(makeLine(-LEAD, leadY, 0, leadY));
-    g.appendChild(makeLine(def.width, leadY, def.width + LEAD, leadY));
-  }
+function renderComponentBody(g, type, def, withStubs) {
+  const img = document.createElementNS(SVG_NS, 'image');
+  img.setAttribute('class', 'comp-body');
+  img.setAttribute('href', def.imageSrc);
+  img.setAttribute('x', 0);
+  img.setAttribute('y', 0);
+  img.setAttribute('width', def.width);
+  img.setAttribute('height', def.height);
+  g.appendChild(img);
 
-  if (def.imageSrc) {
-    const img = document.createElementNS(SVG_NS, 'image');
-    img.setAttribute('href', def.imageSrc);
-    img.setAttribute('x', 0);
-    img.setAttribute('y', 0);
-    img.setAttribute('width', def.width);
-    img.setAttribute('height', def.height);
-    g.appendChild(img);
-  } else {
-    def.glyph(g, def.width, def.height);
+  if (withStubs) {
+    def.terminals.forEach((t) => {
+      if (!t.stubFrom) return;
+      g.appendChild(makeLine(t.stubFrom.x * def.width, t.stubFrom.y * def.height, t.x * def.width, t.y * def.height));
+    });
   }
 }
 
@@ -152,120 +183,6 @@ function svgEl(name, attrs) {
   const el = document.createElementNS(SVG_NS, name);
   Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
   return el;
-}
-
-function drawBatteryGlyph(g, w, h) {
-  // Pile turquoise avec bande verte et deux fils sortant des coins, isolée du reste du montage.
-  g.appendChild(svgEl('line', { x1: w * 0.28, y1: 10, x2: w * 0.1, y2: -6, stroke: '#111', 'stroke-width': 3, 'stroke-linecap': 'round' }));
-  g.appendChild(svgEl('line', { x1: w * 0.72, y1: 10, x2: w * 0.9, y2: -6, stroke: '#111', 'stroke-width': 3, 'stroke-linecap': 'round' }));
-  g.appendChild(svgEl('rect', {
-    class: 'comp-body', x: 2, y: 6, width: w - 4, height: h - 10, rx: 3,
-    fill: '#0f8f96', stroke: '#111', 'stroke-width': 2.5,
-  }));
-  g.appendChild(svgEl('rect', { x: w * 0.16, y: 12, width: w * 0.2, height: w * 0.2, fill: '#111' }));
-  g.appendChild(svgEl('circle', { cx: w * 0.76, cy: 12 + w * 0.1, r: w * 0.1, fill: '#111' }));
-  g.appendChild(svgEl('rect', { x: w * 0.12, y: h * 0.56, width: w * 0.76, height: h * 0.2, fill: '#3ec95a', stroke: '#1f8a36', 'stroke-width': 1 }));
-}
-
-function drawLampGlyph(g, w, h) {
-  // Ampoule à vis sur son culot, façon lampe de schéma scolaire.
-  const cx = w / 2, bulbCy = h * 0.36, r = w * 0.42;
-  g.appendChild(svgEl('ellipse', {
-    class: 'comp-body', cx, cy: bulbCy, rx: r, ry: h * 0.34,
-    fill: '#fdf6d8', stroke: '#8a8a8a', 'stroke-width': 2,
-  }));
-  g.appendChild(svgEl('path', {
-    d: `M ${cx - r * 0.4} ${bulbCy + r * 0.25} q ${r * 0.2} ${-r * 0.5} ${r * 0.4} 0 q ${r * 0.2} ${r * 0.5} ${r * 0.4} 0`,
-    fill: 'none', stroke: '#e0a800', 'stroke-width': 1.5,
-  }));
-  g.appendChild(svgEl('ellipse', { cx: cx - r * 0.35, cy: bulbCy - r * 0.35, rx: r * 0.22, ry: r * 0.14, fill: '#ffffff', opacity: 0.6 }));
-  g.appendChild(svgEl('rect', { x: cx - w * 0.24, y: h * 0.62, width: w * 0.48, height: h * 0.3, fill: '#8c8c8c', stroke: '#555', 'stroke-width': 1.5 }));
-  for (let i = 0; i < 3; i++) {
-    const ly = h * 0.68 + i * (h * 0.09);
-    g.appendChild(svgEl('line', { x1: cx - w * 0.24, y1: ly, x2: cx + w * 0.24, y2: ly, stroke: '#555', 'stroke-width': 1 }));
-  }
-}
-
-function drawSwitchGlyph(g, w, h) {
-  // Interrupteur à couteau sur socle, en position ouverte — isolé du montage.
-  const baseY = h - 16;
-  g.appendChild(svgEl('rect', {
-    class: 'comp-body', x: 4, y: baseY, width: w - 8, height: 16, rx: 4,
-    fill: '#f2d94e', stroke: '#a68f2a', 'stroke-width': 2,
-  }));
-  const leftX = 22, rightX = w - 22;
-  g.appendChild(svgEl('circle', { cx: leftX, cy: baseY, r: 6, fill: '#9a9a9a', stroke: '#555', 'stroke-width': 1.5 }));
-  g.appendChild(svgEl('circle', { cx: rightX, cy: baseY, r: 6, fill: '#9a9a9a', stroke: '#555', 'stroke-width': 1.5 }));
-  g.appendChild(svgEl('line', {
-    x1: leftX, y1: baseY, x2: rightX - 14, y2: baseY - 22,
-    stroke: '#666', 'stroke-width': 5, 'stroke-linecap': 'round',
-  }));
-  g.appendChild(svgEl('circle', { cx: rightX - 14, cy: baseY - 22, r: 5, fill: 'none', stroke: '#555', 'stroke-width': 2.5 }));
-  g.appendChild(svgEl('circle', { cx: leftX, cy: baseY, r: 3, fill: '#555' }));
-}
-
-function drawGeneratorGlyph(g, w, h) {
-  // Boîtier de générateur (façon générateur basse tension de labo).
-  g.appendChild(svgEl('rect', {
-    class: 'comp-body', x: 2, y: 2, width: w - 4, height: h - 4, rx: 8,
-    fill: '#2f6fed', stroke: '#1c4fb0', 'stroke-width': 2,
-  }));
-  g.appendChild(svgEl('rect', { x: 8, y: 8, width: w - 16, height: h * 0.42, rx: 4, fill: '#5c8ff2', stroke: '#1c4fb0', 'stroke-width': 1 }));
-  g.appendChild(svgEl('circle', { cx: w - 20, cy: h * 0.28, r: 7, fill: '#d63333', stroke: '#8f1616', 'stroke-width': 1.5 }));
-  g.appendChild(svgEl('circle', { cx: 22, cy: h * 0.28, r: 9, fill: '#fff', stroke: '#333', 'stroke-width': 1.5 }));
-  g.appendChild(svgEl('line', { x1: 22, y1: h * 0.28, x2: 27, y2: h * 0.22, stroke: '#333', 'stroke-width': 1.5 }));
-  g.appendChild(svgEl('circle', { cx: w / 2 - 14, cy: h - 12, r: 5, fill: '#d63333', stroke: '#8f1616' }));
-  g.appendChild(svgEl('circle', { cx: w / 2 + 14, cy: h - 12, r: 5, fill: '#222', stroke: '#000' }));
-}
-
-function drawMotorGlyph(g, w, h) {
-  // Petit moteur électrique cylindrique sur pieds.
-  g.appendChild(svgEl('rect', {
-    class: 'comp-body', x: w * 0.14, y: h * 0.12, width: w * 0.72, height: h * 0.66, rx: w * 0.2,
-    fill: '#a3a9af', stroke: '#5b6066', 'stroke-width': 2,
-  }));
-  g.appendChild(svgEl('circle', { cx: w / 2, cy: h * 0.16, r: w * 0.09, fill: '#d63333', stroke: '#8f1616', 'stroke-width': 1.5 }));
-  g.appendChild(svgEl('rect', { x: w * 0.78, y: h * 0.42, width: w * 0.14, height: h * 0.12, fill: '#555' }));
-  g.appendChild(svgEl('rect', { x: w * 0.18, y: h * 0.78, width: w * 0.14, height: h * 0.12, rx: 2, fill: '#555' }));
-  g.appendChild(svgEl('rect', { x: w * 0.68, y: h * 0.78, width: w * 0.14, height: h * 0.12, rx: 2, fill: '#555' }));
-}
-
-function drawDiodeGlyph(g, w, h) {
-  // Diode : petit cylindre sombre avec bague marquant la cathode.
-  const cy = h / 2, bodyW = w * 0.68, x0 = (w - bodyW) / 2;
-  g.appendChild(svgEl('rect', {
-    class: 'comp-body', x: x0, y: cy - h * 0.32, width: bodyW, height: h * 0.64, rx: h * 0.3,
-    fill: '#3a3a3a', stroke: '#111', 'stroke-width': 1.5,
-  }));
-  g.appendChild(svgEl('rect', { x: x0 + bodyW * 0.7, y: cy - h * 0.32, width: bodyW * 0.12, height: h * 0.64, fill: '#ddd' }));
-}
-
-function drawLedGlyph(g, w, h) {
-  // DEL : dôme translucide rouge avec deux pattes vers les bornes.
-  const cx = w / 2, domeCy = h * 0.34, domeR = w * 0.32;
-  g.appendChild(svgEl('line', { x1: cx - domeR * 0.6, y1: domeCy + domeR * 0.7, x2: 0, y2: h / 2, stroke: '#888', 'stroke-width': 2 }));
-  g.appendChild(svgEl('line', { x1: cx + domeR * 0.6, y1: domeCy + domeR * 0.7, x2: w, y2: h / 2, stroke: '#888', 'stroke-width': 2 }));
-  g.appendChild(svgEl('path', {
-    class: 'comp-body',
-    d: `M ${cx - domeR} ${domeCy + domeR * 0.6} L ${cx - domeR} ${domeCy} a ${domeR} ${domeR} 0 0 1 ${domeR * 2} 0 L ${cx + domeR} ${domeCy + domeR * 0.6} Z`,
-    fill: '#e6392b', stroke: '#8f1616', 'stroke-width': 1.5,
-  }));
-  g.appendChild(svgEl('ellipse', { cx: cx - domeR * 0.35, cy: domeCy - domeR * 0.1, rx: domeR * 0.25, ry: domeR * 0.35, fill: '#ffffff', opacity: 0.5 }));
-}
-
-function drawResistorGlyph(g, w, h) {
-  // Résistance : corps beige avec bagues de couleur.
-  const cy = h / 2, bodyW = w * 0.72, x0 = (w - bodyW) / 2;
-  g.appendChild(svgEl('rect', {
-    class: 'comp-body', x: x0, y: cy - h * 0.27, width: bodyW, height: h * 0.54, rx: h * 0.18,
-    fill: '#e3c894', stroke: '#a9885a', 'stroke-width': 1.5,
-  }));
-  const bands = ['#7a4a1e', '#d63333', '#d4af37'];
-  bands.forEach((color, i) => {
-    g.appendChild(svgEl('rect', {
-      x: x0 + bodyW * (0.22 + i * 0.18), y: cy - h * 0.27, width: bodyW * 0.08, height: h * 0.54, fill: color,
-    }));
-  });
 }
 
 // ---------- Placement / rendu des composants sur le canevas ----------
@@ -289,14 +206,9 @@ function getTerminalPositions(comp) {
   const rad = (comp.rotation * Math.PI) / 180;
   const cos = Math.cos(rad), sin = Math.sin(rad);
 
-  const localPoints = [
-    { x: -LEAD, y: def.height / 2 },
-    { x: def.width + LEAD, y: def.height / 2 },
-  ];
-
-  return localPoints.map((p) => {
-    const lx = p.x - def.width / 2;
-    const ly = p.y - def.height / 2;
+  return def.terminals.map((t) => {
+    const lx = t.x * def.width - def.width / 2;
+    const ly = t.y * def.height - def.height / 2;
     return {
       x: cx + lx * cos - ly * sin,
       y: cy + lx * sin + ly * cos,
@@ -329,10 +241,9 @@ function render() {
     });
     renderComponentBody(g, comp.type, def, true);
 
-    [0, 1].forEach((i) => {
-      const p = i === 0 ? { x: -LEAD, y: def.height / 2 } : { x: def.width + LEAD, y: def.height / 2 };
+    def.terminals.forEach((t, i) => {
       const circle = svgEl('circle', {
-        class: 'terminal', cx: p.x, cy: p.y, r: 5,
+        class: 'terminal', cx: t.x * def.width, cy: t.y * def.height, r: 5,
         'data-comp': comp.id, 'data-term': i,
       });
       circle.addEventListener('mousedown', (e) => {
